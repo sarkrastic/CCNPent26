@@ -146,7 +146,7 @@ vlan 10
 vlan 50
    name IPCCTVLAN
 vlan 69
-   name nameMO
+   name vlan11
 vlan 70
     name FAVEcolor
 vlan 71
@@ -185,10 +185,10 @@ config t
 ip routing
 ip dhcp pool CAMERA6
 host 10.11.50.6 255.255.255.0
-client-identifier 001a.0704.7f5b
+client-identifier 001a.0709.c25b
 ip dhcp pool CAMERA8
 host 10.11.50.8 255.255.255.0
-client-identifier 001a.0709.c258 
+client-identifier 001a.070a.27e4
 end
 show ip dhcp binding
 
