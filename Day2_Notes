@@ -1,0 +1,424 @@
+
+
+create folder in the desktop
+# - monitor number
+
+@cmd
+cd (changedirectory) desktop
+mkdir CCNP-# 
+cd CCNP-# 
+
+git clone --branch ccnp https://github.com/4rthurCyber08/Rivan_Day3
+
+Codes
+RSTHayup
+open VS Code
+file > open folder 
+
+find network:
+show ip route
+
+Find the network:
+1. 10.180.49.221 /9 | 10.128.0.0 /9
+2. 172.16.45.12 /20 | 3rd, 16i | 172.16.32.0 /20
+3. 192.168.112.130 /27 | 192.168.112.128 /27
+3. 192.168.231.75 /18 | 3rd, 64 | 192.168.192.0 /18
+
+Dynamic Routing
+
+!@EIGRP - C1
+
+configure terminal
+ router eigrp 100
+ no auto-summary
+ eigrp router-id 192.168.1.129
+  network 10.2.1.0  0.0.0.225
+  network 10.2.2.0  0.0.0.255
+  network 192.168.1.128  0.0.0.31
+  network 10.1.4.4  0.0.0.3
+end
+
+!@OSPF - C1
+configure terminal
+ router ospf 1
+  router-id 192.168.1.129
+   network 10.2.1.0  0.0.0.225     area 0
+   network 10.2.2.0  0.0.0.255     area 0
+   network 192.168.1.128  0.0.0.31 area 0
+   network 10.1.4.4  0.0.0.3       area 0
+end
+
+!@BGP - C1
+configure terminal 
+  router bgp 1
+   bgp log-neighbor-changes
+   neighbor 10.1.4.5 remote-as 4
+   address-family ipv4
+    neighbor 10.1.4.5 activate
+    network 10.2.1.0 mask 255.255.255.224
+    network 10.2.2.0  mask 255.255.255.0
+    network 192.168.1.128  mask 255.255.255.0
+    network 10.1.4.4  mask 255.255.255.252
+end
+
+### EIGRP
+- distance vector
+- DUAL Algorithm
+
+EIGRP Messages: 
+1. Hello - Discovers and Maintains neighbor session
+2. Query - When a route is lost EIGRP routers send a query message
+3. Updates - new route advertisement
+4. Reply
+5. Hello (acknowledge)
+
+Dynamic Routing
+
+!@EIGRP - C1
+
+configure terminal
+ router eigrp 100
+ no auto-summary
+ eigrp router-id 192.168.1.129
+  network 10.2.1.0  0.0.0.225
+  network 10.2.2.0  0.0.0.255
+  network 192.168.1.128  0.0.0.31
+  network 10.1.4.4  0.0.0.3
+end
+
+!@OSPF - C1
+configure terminal
+ router ospf 1
+  router-id 192.168.1.129
+   network 10.2.1.0  0.0.0.225     area 0
+   network 10.2.2.0  0.0.0.255     area 0
+   network 192.168.1.128  0.0.0.31 area 0
+   network 10.1.4.4  0.0.0.3       area 0
+end
+
+!@BGP - C1
+configure terminal 
+  router bgp 1
+   bgp log-neighbor-changes
+   neighbor 10.1.4.5 remote-as 4
+   address-family ipv4
+    neighbor 10.1.4.5 activate
+    network 10.2.1.0 mask 255.255.255.224
+    network 10.2.2.0  mask 255.255.255.0
+    network 192.168.1.128  mask 255.255.255.0
+    network 10.1.4.4  mask 255.255.255.252
+end
+
+### EIGRP
+- distance vector
+- DUAL Algorithm
+
+!@Fix EIGRP Routers - C1, C2
+conf terminal
+ no monitor session 1
+ vlan 10
+ no remote-span
+end
+show vlan remote-span
+
+####
+EIGRP Parameters
+
+K1: 1 Bandwidth
+K2: 0 Load
+K3: 1 delay
+K4: 0 Rel
+K5: 0 MTU
+K6: 0 EX
+
+@R4
+sh ip route eigrp
+sh ip eigrp topology 10.2.1.0/24
+
+#### EIGRP METRIC CALC
+!@R4
+sh int e1/0 | s BW 
+
+!@C1
+sh int vlan 10 | s BW 
+
+1. Bandwidth/Throughput (compute)
+= 10 7 / Min Bandwidth
+
+2. Total DLY / Latency
+= Total DLY / 10
+
+3. Composite Metric
+= 256 * ( THROUGHPUT + LATENCY )
+
+#########
+#### EIGRP METRIC CALC
+!@R4
+sh int e1/0 | s BW 
+
+!@C1
+sh int vlan 10 | s BW 
+
+min BW 10000 
+
+1. Bandwidth/Throughput (compute)
+= 10 7 / Min Bandwidth
+= 10 000 000 / 10 000
+= 1 000
+
+
+2. Total DLY / Latency
+= Total DLY / 10
+= 2010 / 10
+= 201
+
+3. Composite Metric
+= 256 * ( THROUGHPUT + LATENCY )
+= 256 * 1000 + 201
+= 256 * 1201
+= 307456
+
+Remove EIGRP
+!@R3,R4,C1,C2
+conf t
+ no router eigrp 100
+ end
+
+###### NAME EIGRP
+
+!@C1
+config t
+ router eigrp CCNPLEVEL
+  address-family ipv4 unicast auto 100
+   eigrp router-id 192.168.1.129
+   network 10.1.4.4 0.0.0.3
+   network 10.2.1.0 0.0.0.255
+   network 10.2.2.0 0.0.0.255
+   network 192.168.1.128 0.0.0.31
+   topology base
+    no auto-summary
+    end
+
+!@C2
+conf t
+ router eigrp CCNPLEVEL
+   address-family ipv4 unicast auto 100
+  eigrp router-id 192.168.1.130
+  network 10.1.4.8 0.0.0.3
+  network 10.2.1.0 0.0.0.255
+  network 10.2.2.0 0.0.0.255
+  network 192.168.1.128 0.0.0.31
+  topology base
+    no auto-summary
+    end
+
+  !@R4
+conf t
+ router eigrp CCNPLEVEL
+  address-family ipv4 unicast auto 100
+  topology base
+    no auto-summary
+  eigrp router-id 10.1.4.9
+  network 10.1.4.8 0.0.0.3
+  network 10.1.4.4 0.0.0.3
+  end
+
+
+###### NAME EIGRP METRIC CALC
+
+GIVEN VALUES:
+Min = 10 000
+Total Delay = 1010
+
+1. THROUGHPUT
+ =10^7 * 65536 / MIN BW
+ = 655 360 000 000 / 10 000
+ = 65 536 000
+
+2. LATENCY
+  = TotalDelay psec (6 na 0) * 65536 / 10^6
+  = 1 010 000 000 * 65536 / 1 000 000
+  = 66 191 360 000 000 / 1 000 000
+  = 66 191 360
+
+3. Composite Metric
+ = THROUGHPUT + LATENCY
+ = 65 536 000 + 66 191 360
+ = 131 727 360
+
+4. RIB - SCALE
+ = Composite Metric / Rib-SCALE
+ = 131 727 360 / 128
+ = 1 029 120
+
+==============================================================
+***ACTIVITY***
+
+GIVEN VALUES:
+Min = 10 000
+Total Delay = 10 000 + 1000 + 10 = 11 010
+
+1. THROUGHPUT
+ =10^7 * 65536 / MIN BW
+ = 655 360 000 000 / 10 000
+ = 65 536 000
+
+2. LATENCY
+  = TotalDelay psec (6 na 0) * 65536 / 10^6
+  = 11 010 000 000 * 65536 / 1 000 000 / 1 000 000
+  = 721 551 360 000 000 / 1 000 000
+  = 721 551 360
+
+3. Composite Metric
+ = THROUGHPUT + LATENCY
+ = 65 536 000 + 721 551 360
+ = 787 087 360
+
+4. RIB - SCALE
+ = Composite Metric / Rib-SCALE
+ = 787 087 360 / 128
+ = 6 149 120
+ 
+########### OSPF 
+
+R1-R4 in advanced routing
+
+!@R5
+conf t
+ router ospf 1
+  router-id 5.5.5.5
+  exit
+  int range lo5, e1/2-3
+  ip ospf 1 area 352
+  end 
+  
+!@R6
+conf t
+ router ospf 1
+ router-id 6.6.6.6
+ int range lo1, e1/1-2
+ ip ospf 1 area 26
+ end
+
+!@R4,R3 point-to-point
+conf t
+ int e1/2
+  ip ospf network point-to-point
+  end
+
+
+OSPF DR
+
+conf t
+ int e1/2
+  ip ospf priority 255
+  end
+
+
+1. OSPF Adjanceny
+ 1. Router ID must be unique among ospf routers
+ 2. Area ID - same
+ 3. Subnet Mask - same
+ 4. Authentication Type - same
+ 5. Network Type - same
+ 6. Timers - same
+ 7 Stub area - same
+ 8. DR - same
+ 9. BDR
+
+#### OSPF Metric Cost
+ = reference BW / INt BW
+ = 100 mbps / 10 000 kbps
+ = 100 mbps / 10 mbps
+ = 10
+
+!@R1, R2, R3, R4, R5, R6 - Changing bandwidth for OSPF
+conf t
+ router ospf 1
+  auto-cost reference-bandwidth 100000
+  end
+
+### OSPF and EIGRP REDISTRIBUTION
+!@R
+conf t
+ router eigrp CCNPLEVEL
+  address-family ipv4 unicast autonomous-system 100
+   topology base
+    redistribute ospf 1 metric 10000 100 255 1 1500
+	exit
+   exit
+  exit
+ router ospf 1
+  redistribute eigrp 100 subnets
+    end
+
+#### SEED METRICS
+1. OSPF -> 20
+2. EIGRP -> INFINITY
+3. RIP -> INFINITY
+4. BGP -> IGP
+5. ISIS -> 0
+
+sh bgp summary
+
+!@R1
+config t
+ access-list 21 permit host 51.51.51.51
+ access-list 52 permit host 53.53.53.53
+ !
+ route-map ISPfor51 permit 10
+  match ip address 51
+  set weight 51
+ route-map ISPfor51 permit 20
+ !
+ route-map ISPfor53 permit 10
+  match ip address 53
+  set weight 53
+ route-map ISPfor53 permit 20
+ !
+ router bgp 1 
+  neighbor 208.8.8.4 route-map ISPfor51 in
+  neighbor 209.9.9.3 route-map ISPfor53 in
+end
+clear ip bgp * soft
+
+config t
+ access-list 54 permit host 54.54.54.54
+ access-list 55 permit host 55.55.55.55
+ !
+ route-map ISPfor54 permit 10
+  match ip address 54
+  set weight 54
+ route-map ISPfor54 permit 20
+ !
+ route-map ISPfor55 permit 10
+  match ip address 55
+  set weight 55
+ route-map ISPfor55 permit 20
+ !
+ router bgp 1 
+  neighbor 208.8.8.4 route-map ISPfor54 in
+  neighbor 209.9.9.3 route-map ISPfor55 in
+end
+clear ip bgp * soft
+
+conf terminal
+ router ospf 1
+  area 26 range 10.10.8.0 255.255.252.0
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
